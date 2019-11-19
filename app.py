@@ -52,6 +52,63 @@ def users():
     }
 
 
+@app.route('/user/<username>')
+def user(username):
+    proc = subprocess.Popen(
+        ("id -a {}".format(username)).split(), stdout=subprocess.PIPE)
+    out, _ = proc.communicate()
+    # format
+    # uid=<int>(<string>) gid=<int>(<string>) groups=[<int>(<string>),]
+    matches = re.findall(r'(\d+)\((\w+|\d+)\)', out)
+    if not matches:
+        return {
+            'version': version,
+            'error': '\'{}\': no such user'.format(username)
+        }
+    groups_list = []
+    gm = matches[2:]
+    for g in gm:
+        groups_list.append({
+            'gid': int(g[0]),
+            'name': g[1]
+        })
+    return {
+        'version': version,
+        'user': {
+            'name': matches[0][1],
+            'uid': int(matches[0][0]),
+            'groups': groups_list
+        }
+    }
+
+
+@app.route('/group/<name>')
+def group(name):
+    proc = subprocess.Popen(
+        ("getent group {}".format(name)).split(), stdout=subprocess.PIPE)
+    out, err = proc.communicate()
+    if not out:
+        return {
+            'version': version,
+            'error': '\'{}\': no such group'.format(name)
+        }
+    # parse group name and id
+    parts = filter(None, out.split(':'))
+    members = []
+    proc = subprocess.Popen(
+        ("members {}".format(parts[0])).split(), stdout=subprocess.PIPE)
+    out, _ = proc.communicate()
+    members = filter(None, out.split())
+    return {
+        'version': version,
+        'group': {
+            'name': parts[0],
+            'gid': int(parts[2]),
+            'members': members
+        }
+    }
+
+
 @app.route('/groups')
 def groups():
     """
