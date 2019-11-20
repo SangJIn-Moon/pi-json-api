@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+message Request {
+  string version = 1;
+  oneof body {
+    AddUser adduser = 2;
+    DeleteUser deluser = 3;
+  }
+}
+
+message Response {
+  string version = 1;
+  string status = 2;
+  oneof data {
+    UserList users = 3;
+    GroupList groups = 4;
+    UserInfo user = 5;
+    GroupInfo group = 6;
+    NetworkInterfaceList interfaces = 7;
+  }
+}
+
+/*
+ * /users
+ */
+message UserList {
+  message UserListEntry {
+    int32 uid = 1;
+    string name = 2;
+    int32 gid = 3;
+    string home = 4;
+    string shell = 5;
+  }
+  repeated UserListEntry users = 1;
+}
+
+/*
+ * /groups
+ */
+message GroupList {
+  message GroupListEntry {
+    int32 gid = 1;
+    string name = 2;
+    repeated string members = 3;
+  }
+  repeated GroupListEntry groups = 1;
+}
+
+/*
+ * /user/:uid
+ */
+message UserInfo {
+  message MemberOfGroup {
+    int32 gid = 1;
+    string name = 2;
+  }
+  int32 uid = 1;
+  string name = 2;
+  repeated MemberOfGroup groups = 3;
+}
+
+/*
+ * /group/:gid
+ */
+message GroupInfo {
+  int32 gid = 1;
+  string name = 2;
+  repeated string members = 3;
+}
+
+/*
+ * /net
+ */
+message NetworkInterfaceList {
+  repeated string name = 1;
+}
+
+/*
+ * /disk
+ */
+message PartitionList {
+  message PartitionListEntry {
+    string filesystem = 1;
+    string mount_point = 2;
+    string type = 3;
+    int64 size = 4;
+    int64 available = 5;
+    int64 used = 6;
+    float percent = 7;
+  }
+  repeated PartitionListEntry partitions = 1;
+}
+
+/*
+ * /adduser
+ *
+ * @params
+ *    - name
+ *    - password @optional
+ *    - groups @optional
+ */
+ message AddUser {
+   string name = 1;
+   string password = 2;
+   repeated string groups = 3;
+  }
+
+/*
+ * /deluser
+ *
+ * @params:
+ *    - name
+ *    - uid
+ */
+message DeleteUser {
+  oneof identifier {
+    string name = 1;
+    string uid = 2;
+  }
+}
