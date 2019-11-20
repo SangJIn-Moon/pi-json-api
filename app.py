@@ -1,17 +1,25 @@
 import subprocess
 import re
+import os
 from flask import Flask
+from flask import request
 
 app = Flask(__name__)
 
 version = '0.1.0'
 
 
+def res(data = {}, status = True):
+    obj = {
+        'version': version,
+        'status': 'ok' if True else 'error'
+    }
+    obj.update(data)
+    return obj
+
 @app.route('/')
 def index():
-    return {
-        'version': version,
-    }
+    return res()
 
 
 @app.route('/users')
@@ -24,18 +32,18 @@ def users():
     lines = filter(None, out.split('\n'))
     for line in lines:
         col = line.split(':')
-        """
-        info = None
-        if col[4]:
-            user_info = col[4].split(',')
-            if len(user_info) > 1:
-                info = {
-                    'full_name': user_info[0] if user_info[0] != '' else None,
-                    'room_number': user_info[1] if user_info[1] != '' else None,
-                    'work_phone': user_info[2] if user_info[2] != '' else None,
-                    'home_phone': user_info[3] if user_info[3] != '' else None,
-                }
-        """
+
+        # info = None
+        # if col[4]:
+        #     user_info = col[4].split(',')
+        #     if len(user_info) > 1:
+        #         info = {
+        #             'full_name': user_info[0] if user_info[0] != '' else None,
+        #             'room_number': user_info[1] if user_info[1] != '' else None,
+        #             'work_phone': user_info[2] if user_info[2] != '' else None,
+        #             'home_phone': user_info[3] if user_info[3] != '' else None,
+        #         }
+
         user_object = {
             'name': col[0],
             # 'password': col[1],
@@ -46,10 +54,10 @@ def users():
             'shell': col[6]
         }
         list.append(user_object)
-    return {
+    return res({
         'version': version,
         'users': list
-    }
+    })
 
 
 @app.route('/user/<username>')
@@ -72,15 +80,14 @@ def user(username):
             'gid': int(g[0]),
             'name': g[1]
         })
-    return {
+    return res({
         'version': version,
         'user': {
             'name': matches[0][1],
             'uid': int(matches[0][0]),
             'groups': groups_list
         }
-    }
-
+    })
 
 @app.route('/group/<name>')
 def group(name):
@@ -99,15 +106,14 @@ def group(name):
         ("members {}".format(parts[0])).split(), stdout=subprocess.PIPE)
     out, _ = proc.communicate()
     members = filter(None, out.split())
-    return {
+    return res({
         'version': version,
         'group': {
             'name': parts[0],
             'gid': int(parts[2]),
             'members': members
         }
-    }
-
+    })
 
 @app.route('/groups')
 def groups():
@@ -137,13 +143,13 @@ def groups():
             'members': members
         }
         list.append(group_object)
-    return {
+    return res({
         'version': version,
         'groups': list
-    }
+    })
 
 
-@app.route('/interfaces')
+@app.route('/net')
 def interfaces():
     proc = subprocess.Popen("netstat -i".split(), stdout=subprocess.PIPE)
     out, _ = proc.communicate()
@@ -158,10 +164,10 @@ def interfaces():
         }
         list.append(iface_object)
 
-    return {
+    return res({
         'version': version,
         'interfaces': list
-    }
+    })
 
 
 @app.route('/disk')
@@ -185,10 +191,54 @@ def disk():
             'mount_point': col[6]
         }
         list.append(fs_object)
-    return {
+    return res({
         'version': version,
         'disk': list
-    }
+    })
+
+@app.route('/adduser', methods=['POST'])
+def adduser():
+    # TODO(everdrone): check that username is eligible and it doesn't exist yet
+    data = request.get_json()
+    proc = subprocess.Popen(
+        './adduser.sh'.split(),
+        cwd='/home/telegram/test/flask_web/scripts',
+        env=dict(
+            os.environ,
+            username=data['name'],
+            groups=','.join(data['groups']),
+            password=data['password']
+        ),
+        stdout=subprocess.PIPE
+    )
+    out, _ = proc.communicate()
+
+    return res({
+        'version': version,
+        'user': {
+            'name': data['name'],
+            'groups': data['groups']
+        }
+    })
+
+@app.route('/deluser', methods=['DELETE'])
+def deluser():
+    # TODO(everdrone): check if user has a uid > 999 (not builtin user)
+    data = request.get_json()
+    proc = subprocess.Popen(
+        'sudo deluser {} {}'.format(
+            '--remove-home' if data['remove_home'] else '',
+            data['name']
+        ).split(),
+        stdout=subprocess.PIPE
+    )
+    out, _ = proc.communicate()
+
+    # TODO(everdrone): check that user doesn't exist anymore in /etc/passwd
+    return res({
+        'version': version,
+        'user': data['name']
+    })
 
 
 if __name__ == "__main__":
