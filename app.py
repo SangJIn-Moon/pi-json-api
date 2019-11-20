@@ -8,6 +8,8 @@ app = Flask(__name__)
 
 version = '0.1.0'
 
+dirname = os.path.dirname(os.path.realpath(__file__))
+
 
 def res(data={}, status=True):
     obj = {
@@ -206,7 +208,7 @@ def adduser():
     data = request.get_json()
     proc = subprocess.Popen(
         './adduser.sh'.split(),
-        cwd=os.path.join(os.path.realpath(__file__), 'scripts'),
+        cwd=os.path.join(dirname, 'scripts'),
         env=dict(
             os.environ,
             username=data['name'],
