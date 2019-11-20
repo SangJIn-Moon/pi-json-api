@@ -9,13 +9,14 @@ app = Flask(__name__)
 version = '0.1.0'
 
 
-def res(data = {}, status = True):
+def res(data={}, status=True):
     obj = {
         'version': version,
         'status': 'ok' if True else 'error'
     }
     obj.update(data)
     return obj
+
 
 @app.route('/')
 def index():
@@ -89,6 +90,7 @@ def user(username):
         }
     })
 
+
 @app.route('/group/<name>')
 def group(name):
     proc = subprocess.Popen(
@@ -114,6 +116,7 @@ def group(name):
             'members': members
         }
     })
+
 
 @app.route('/groups')
 def groups():
@@ -196,13 +199,14 @@ def disk():
         'disk': list
     })
 
+
 @app.route('/adduser', methods=['POST'])
 def adduser():
     # TODO(everdrone): check that username is eligible and it doesn't exist yet
     data = request.get_json()
     proc = subprocess.Popen(
         './adduser.sh'.split(),
-        cwd='/home/telegram/test/flask_web/scripts',
+        cwd=os.path.join(os.path.realpath(__file__), 'scripts'),
         env=dict(
             os.environ,
             username=data['name'],
@@ -220,6 +224,7 @@ def adduser():
             'groups': data['groups']
         }
     })
+
 
 @app.route('/deluser', methods=['DELETE'])
 def deluser():
