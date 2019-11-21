@@ -37,7 +37,7 @@ def exists(groupname):
 def get_members(groupname):
     if exists(groupname):
         name = groupname
-        if int(groupname):
+        if isinstance(groupname, (int, long)):
             # get name from group id
             name = name_from_gid(groupname)
 
