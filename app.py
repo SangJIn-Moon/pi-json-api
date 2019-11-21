@@ -10,7 +10,7 @@ import api.parsers.misc
 
 app = Flask(__name__)
 
-version = '0.1.0'
+version = '0.2.0'
 
 
 def res(data={}, status=True):
