@@ -42,17 +42,24 @@ def is_builtin(username):
 
 def parse():
     lines = api.utils.fs.read_lines('/etc/passwd')
+    proc = subprocess.Popen(
+        ('sudo cat /etc/shadow').split(), stdout=subprocess.PIPE)
+    stdout, _ = proc.communicate()
+    shadow_lines = filter(None, stdout.split('\n'))
     out = []
     for line in lines:
         col = line.split(':')
         is_builtin = _is_builtin_uid_name(int(col[2]), col[0])
+        # this allows us to do one read through cat (better than N reads)
+        locked = _is_locked_lines(shadow_lines, col[0])
         obj = {
             'name': col[0],
             'uid': int(col[2]),
             'gid': int(col[3]),
             'home': col[5],
             'shell': col[6],
-            'builtin': is_builtin
+            'builtin': is_builtin,
+            'is_locked': locked
         }
         out.append(obj)
     return out
@@ -77,6 +84,24 @@ def get_groups(username):
     return _get_groups_stdout(stdout, username)
 
 
+def _is_locked_lines(lines, username):
+    for line in lines:
+        if line.startswith('{}:'.format(username)):
+            col = line.split(':')
+            if '!' in col[1]:
+                return True
+            return False
+
+
+def is_locked(username):
+    # NOTE: only the name is a valid parameter, not the UID!!
+    proc = subprocess.Popen(
+        ('sudo cat /etc/shadow').split(), stdout=subprocess.PIPE)
+    stdout, _ = proc.communicate()
+    shadow_lines = filter(None, stdout.split('\n'))
+    return _is_locked_lines(shadow_lines, username)
+
+
 def parse_single(username):
     proc = subprocess.Popen(
         ("id -a {}".format(username)).split(), stdout=subprocess.PIPE)
@@ -85,10 +110,13 @@ def parse_single(username):
     if not matches:
         raise RuntimeError('\'{}\': no such user'.format(username))
     is_builtin = _is_builtin_uid_name(int(matches[0][0]), matches[0][1])
+    # check if user is locked
+    locked = is_locked(matches[0][1])
     out = {
         'name': matches[0][1],
         'uid': matches[0][0],
         'is_builtin': is_builtin,
+        'is_locked': locked
     }
     groups = _get_groups_stdout(stdout, username)
     out['groups'] = groups
