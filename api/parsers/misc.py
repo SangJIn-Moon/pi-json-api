@@ -2,6 +2,7 @@ import subprocess
 import re
 import os
 import api.utils.fs
+from api.utils.cmd import shell
 
 
 def cpu():
@@ -106,10 +107,10 @@ def kernel():
     for module in lines:
         match = re.match('([a-zA-Z0-9\_]+)\s+(\d+)\s+(\d+)', module)
         if match:
-            name = match.groups(1)[0]
+            name = match.groups()[0]
             lsmod[name] = {
-                'size': match.groups(1)[1],
-                'refcount': match.groups(1)[1]
+                'size': int(match.groups()[1]),
+                'refcount': int(match.groups()[2])
             }
             # get module version
             path = '/sys/module/{}/version'.format(name)
@@ -188,4 +189,22 @@ def block():
                     out[block][check] = int(data.strip())
             except:
                 pass
+    return out
+
+
+def sessions():
+    lines = shell('w -h')
+    lines = filter(None, lines.split('\n'))
+    out = []
+    for line in lines:
+        col = line.split()
+        out.append({
+            'user': col[0],
+            'tty': col[1],
+            'from': col[2],
+            'login_time': col[3],
+            'idle': col[4],
+            'jcpu': col[5],
+            'pcpu': col[6]
+        })
     return out

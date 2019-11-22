@@ -142,7 +142,7 @@ def shells():
     return res({'shells': api.parsers.misc.shells()})
 
 
-@app.route('/ssh')
+@app.route('/keys')
 def ssh():
     return res({'keys': api.parsers.misc.keys()})
 
@@ -150,6 +150,13 @@ def ssh():
 @app.route('/block')
 def block():
     return res({'block': api.parsers.misc.block()})
+
+
+@app.route('/sessions')
+def sessions():
+    return res({
+        'sessions': api.parsers.misc.sessions()
+    })
 
 
 if __name__ == "__main__":
