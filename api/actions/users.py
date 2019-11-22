@@ -51,19 +51,20 @@ def delete(username, remove_home=True):
 
 
 def add_to_groups(username, groups):
-    groups = ','.join(groups)
-    shell('sudo usermod -a -G {} {}'.format(groups, username))
+    groups_string = ','.join(groups)
+    shell('sudo usermod -a -G {} {}'.format(groups_string, username))
     should = []
-    for ag in api.parsers.users.get_gropus(username):
+    for ag in api.parsers.users.get_groups(username):
         should.append(ag['name'])
     if all(name in should for name in groups):
         return api.parsers.users.parse_single(username)
+
 
 def remove_from_groups(username, groups):
     for group in groups:
         shell('sudo gpasswd -d {} {}'.format(username, group))
     should = []
-    for ag in api.parsers.users.get_gropus(username):
+    for ag in api.parsers.users.get_groups(username):
         should.append(ag['name'])
     if not all(name in should for name in groups):
         return api.parsers.users.parse_single(username)

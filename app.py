@@ -39,13 +39,16 @@ def users():
 def user(uid):
     return res({'user': api.parsers.users.parse_single(uid)})
 
+
 @app.route('/useradd', methods=['POST'])
 def useradd():
     data = request.get_json()
-    response = api.actions.users.create(data['name'], data['password'], data['groups'])
+    response = api.actions.users.create(
+        data['name'], data['password'], data['groups'])
     return res({
         'user': response
     })
+
 
 @app.route('/deluser', methods=['POST'])
 def deluser():
@@ -53,17 +56,20 @@ def deluser():
     response = api.actions.users.delete(data['name'])
     return res()
 
+
 @app.route('/userlock', methods=['POST'])
 def userlock():
     data = request.get_json()
     response = api.actions.users.lock(data['name'])
     return res({'user': response})
 
+
 @app.route('/userunlock', methods=['POST'])
 def userunlock():
     data = request.get_json()
     response = api.actions.users.unlock(data['name'])
     return res({'user': response})
+
 
 @app.route('/addtogroups', methods=['POST'])
 def addtogroups():
@@ -73,14 +79,26 @@ def addtogroups():
         'user': response
     })
 
+
+@app.route('/removefromgroups', methods=['POST'])
+def removefromgroups():
+    data = request.get_json()
+    response = api.actions.users.remove_from_groups(
+        data['name'], data['groups'])
+    return res({
+        'user': response
+    })
+
 # group probes and actions
 @app.route('/groups')
 def groups():
     return res({'groups': api.parsers.groups.parse()})
 
+
 @app.route('/group/<gid>')
 def group(gid):
     return res({'group': api.parsers.groups.parse_single(gid)})
+
 
 @app.route('/groupadd', methods=['POST'])
 def groupadd():
@@ -89,6 +107,7 @@ def groupadd():
     return res({
         'group': response
     })
+
 
 @app.route('/delgroup', methods=['POST'])
 def delgroup():
