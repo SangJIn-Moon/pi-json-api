@@ -5,12 +5,14 @@ from flask import Flask
 from flask import request
 
 import api.parsers.users
+import api.actions.users
 import api.parsers.groups
+import api.actions.groups
 import api.parsers.misc
 
 app = Flask(__name__)
 
-version = '0.2.0'
+version = '0.1.0'
 
 
 def res(data={}, status=True):
@@ -37,15 +39,62 @@ def users():
 def user(uid):
     return res({'user': api.parsers.users.parse_single(uid)})
 
+@app.route('/useradd', methods=['POST'])
+def useradd():
+    data = request.get_json()
+    response = api.actions.users.create(data['name'], data['password'], data['groups'])
+    return res({
+        'user': response
+    })
+
+@app.route('/deluser', methods=['POST'])
+def deluser():
+    data = request.get_json()
+    response = api.actions.users.delete(data['name'])
+    return res()
+
+@app.route('/userlock', methods=['POST'])
+def userlock():
+    data = request.get_json()
+    response = api.actions.users.lock(data['name'])
+    return res({'user': response})
+
+@app.route('/userunlock', methods=['POST'])
+def userunlock():
+    data = request.get_json()
+    response = api.actions.users.unlock(data['name'])
+    return res({'user': response})
+
+@app.route('/addtogroups', methods=['POST'])
+def addtogroups():
+    data = request.get_json()
+    response = api.actions.users.add_to_groups(data['name'], data['groups'])
+    return res({
+        'user': response
+    })
+
 # group probes and actions
 @app.route('/groups')
 def groups():
     return res({'groups': api.parsers.groups.parse()})
 
-
 @app.route('/group/<gid>')
 def group(gid):
     return res({'group': api.parsers.groups.parse_single(gid)})
+
+@app.route('/groupadd', methods=['POST'])
+def groupadd():
+    data = request.get_json()
+    response = api.actions.groups.create(data['name'])
+    return res({
+        'group': response
+    })
+
+@app.route('/delgroup', methods=['POST'])
+def delgroup():
+    data = request.get_json()
+    api.actions.groups.delete(data['name'])
+    return res()
 
 
 # misc probes
