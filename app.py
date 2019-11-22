@@ -9,17 +9,25 @@ import api.actions.users
 import api.parsers.groups
 import api.actions.groups
 import api.parsers.misc
+import api.parsers.memory
+import api.parsers.fs
 
 app = Flask(__name__)
 
 version = '0.1.0'
 
 
-def res(data={}, status=True):
+def res(data={}, status=True, message=None):
     obj = {
         'version': version,
         'status': 'ok' if True else 'error'
     }
+    if not status:
+        obj['error'] = {
+            'message': message,
+            'data': data
+        }
+        return obj
     obj.update(data)
     return obj
 
@@ -53,7 +61,7 @@ def useradd():
 @app.route('/deluser', methods=['POST'])
 def deluser():
     data = request.get_json()
-    response = api.actions.users.delete(data['name'])
+    api.actions.users.delete(data['name'])
     return res()
 
 
@@ -120,6 +128,18 @@ def delgroup():
 @app.route('/cpu')
 def cpu():
     return res({'cpu': api.parsers.misc.cpu()})
+
+
+@app.route('/mem')
+def mem():
+    return res({'memory': api.parsers.memory.parse()})
+
+
+@app.route('/fs/<mode>')
+def filesystem(mode):
+    if mode not in ['pair', 'device', 'mountpoint']:
+        return res({}, False, 'unknown display mode.')
+    return res({'filesystem': api.parsers.fs.parse(mode)})
 
 
 @app.route('/uptime')

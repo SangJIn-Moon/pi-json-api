@@ -67,10 +67,10 @@ def filesystem():
             key = '{},{}'.format(mg[0], mg[5])
             df_ip[key] = {}
             df_ip[key]['device'] = mg[0]
-            df_ip[key]['total_inodes'] = mg[1]
-            df_ip[key]['inodes_used'] = mg[2]
-            df_ip[key]['inodes_available'] = mg[3]
-            df_ip[key]['inodes_percent_used'] = mg[4]
+            df_ip[key]['total_inodes'] = int(mg[1])
+            df_ip[key]['inodes_used'] = int(mg[2])
+            df_ip[key]['inodes_available'] = int(mg[3])
+            df_ip[key]['inodes_percent_used'] = int(mg[4][:-1])
             df_ip[key]['mount'] = mg[5]
     # merge into out obj
     out.update(df_ip)
@@ -108,7 +108,7 @@ def filesystem():
             proc[key]['fs_type'] = mg[2]
             proc[key]['mount_options'] = mg[3].split(',')
             # update only if missing
-            if key not in out.keys():
+            if key not in out:
                 out[key] = proc[key]
 
     # grab lsblk data
@@ -162,20 +162,30 @@ def filesystem():
 
 def parse(mode):
     fs = filesystem()
-    if 'pair':
+    if 'pair' == mode:
         return fs
-    if 'device':
+    if 'device' == mode:
         out = {}
-        for entry in out.keys():
+        for entry in fs.keys():
+            entry = fs[entry]
             out[entry['device']] = {}
-            for key, val in entry.item():
+            for key, val in entry.items():
                 if not (key == 'mount' or key == 'device'):
                     out[entry['device']][key] = val
             out[entry['device']]['mounts'] = []
             if entry['mount']:
                 out[entry['device']]['mounts'].append(entry['mount'])
         return out
-    if 'mountpoint':
-        pass
+    if 'mountpoint' == mode:
+        out = {}
+        for entry in fs.keys():
+            entry = fs[entry]
+            out[entry['mount']] = {}
+            for key, val in entry.items():
+                out[entry['mount']][key] = val
+            out[entry['mount']]['devices'] = []
+            if entry['device']:
+                out[entry['mount']]['devices'].append(entry['device'])
+        return out
     else:
         pass
