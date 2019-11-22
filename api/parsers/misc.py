@@ -130,7 +130,7 @@ def shells():
     return out
 
 
-def ssh():
+def keys():
     out = {}
     try:
         dsa = api.utils.fs.read('/etc/ssh/ssh_host_dsa_key.pub')

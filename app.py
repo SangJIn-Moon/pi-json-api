@@ -144,7 +144,7 @@ def shells():
 
 @app.route('/ssh')
 def ssh():
-    return res({'ssh': api.parsers.misc.ssh()})
+    return res({'keys': api.parsers.misc.keys()})
 
 
 @app.route('/block')
